@@ -180,7 +180,9 @@ MODBUS_API int modbus_set_socket(modbus_t *ctx, int s);
 MODBUS_API int modbus_get_socket(modbus_t *ctx);
 
 MODBUS_API int modbus_get_response_timeout(modbus_t *ctx, uint32_t *to_sec, uint32_t *to_usec);
-MODBUS_API int modbus_set_response_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec);
+MODBUS_API 
+int modbus_set_response_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec);
+void modbus_set_request_callback(modbus_t *ctx, int (*callback)(modbus_t *ctx, uint8_t *req, int req_length));
 
 MODBUS_API int modbus_get_byte_timeout(modbus_t *ctx, uint32_t *to_sec, uint32_t *to_usec);
 MODBUS_API int modbus_set_byte_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec);

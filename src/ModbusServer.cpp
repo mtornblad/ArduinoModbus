@@ -21,6 +21,53 @@
 
 #include "ModbusServer.h"
 
+// Define the static member
+void (*ModbusServer::_onRequestCallback)(int, int, int, int) = NULL;
+
+extern "C" {
+// Helper callback for libmodbus
+int internalRequestCallback(modbus_t *ctx, uint8_t *req, int req_length) {
+    if (ModbusServer::_onRequestCallback) {
+        int header_length = modbus_get_header_length(ctx);
+        if (req_length < header_length + 1) return 0;
+
+        int slave = req[header_length - 1];
+        int function = req[header_length];
+        int address = 0;
+        int quantity = 0;
+
+        // Extract address (usually 2 bytes after function)
+        if (req_length >= header_length + 3) {
+            address = (req[header_length + 1] << 8) + req[header_length + 2];
+        }
+
+        // Extract quantity based on function type
+        switch(function) {
+            case MODBUS_FC_READ_COILS:
+            case MODBUS_FC_READ_DISCRETE_INPUTS:
+            case MODBUS_FC_READ_HOLDING_REGISTERS:
+            case MODBUS_FC_READ_INPUT_REGISTERS:
+            case MODBUS_FC_WRITE_MULTIPLE_COILS:
+            case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+                if (req_length >= header_length + 5) {
+                    quantity = (req[header_length + 3] << 8) + req[header_length + 4];
+                }
+                break;
+            case MODBUS_FC_WRITE_SINGLE_COIL:
+            case MODBUS_FC_WRITE_SINGLE_REGISTER:
+                quantity = 1; 
+                break;
+            default:
+                quantity = 0;
+        }
+
+        ModbusServer::_onRequestCallback(slave, function, address, quantity);
+    }
+    return 0;
+}
+}
+
+
 ModbusServer::ModbusServer() :
   _mb(NULL)
 {
@@ -32,6 +79,11 @@ ModbusServer::~ModbusServer()
   if (_mbMapping.tab_bits != NULL) {
     free(_mbMapping.tab_bits);
   }
+
+void ModbusServer::onRequest(void (*callback)(int, int, int, int)) {
+    _onRequestCallback = callback;
+}
+
 
   if (_mbMapping.tab_input_bits != NULL) {
     free(_mbMapping.tab_input_bits);

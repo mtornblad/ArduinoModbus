@@ -189,7 +189,12 @@ int modbus_flush(modbus_t *ctx)
 static unsigned int compute_response_length_from_request(modbus_t *ctx, uint8_t *req)
 {
     int length;
-    const int offset = ctx->backend->header_length;
+    const int 
+    if (ctx->request_callback != NULL) {
+        ctx->request_callback(ctx, (uint8_t*)req, req_length);
+    }
+
+    offset = ctx->backend->header_length;
 
     switch (req[offset]) {
     case MODBUS_FC_READ_COILS:
@@ -567,7 +572,12 @@ static int check_confirmation(modbus_t *ctx, uint8_t *req,
 {
     int rc;
     int rsp_length_computed;
-    const int offset = ctx->backend->header_length;
+    const int 
+    if (ctx->request_callback != NULL) {
+        ctx->request_callback(ctx, (uint8_t*)req, req_length);
+    }
+
+    offset = ctx->backend->header_length;
     const int function = rsp[offset];
 
     if (ctx->backend->pre_check_confirmation) {
@@ -770,6 +780,11 @@ int modbus_reply(modbus_t *ctx, const uint8_t *req,
     if (ctx == NULL) {
         errno = EINVAL;
         return -1;
+    }
+
+    
+    if (ctx->request_callback != NULL) {
+        ctx->request_callback(ctx, (uint8_t*)req, req_length);
     }
 
     offset = ctx->backend->header_length;
@@ -1075,6 +1090,11 @@ int modbus_reply_exception(modbus_t *ctx, const uint8_t *req,
         return -1;
     }
 
+    
+    if (ctx->request_callback != NULL) {
+        ctx->request_callback(ctx, (uint8_t*)req, req_length);
+    }
+
     offset = ctx->backend->header_length;
     slave = req[offset - 1];
     function = req[offset];
@@ -1230,7 +1250,12 @@ static int read_registers(modbus_t *ctx, int function, int addr, int nb,
         if (rc == -1)
             return -1;
 
-        offset = ctx->backend->header_length;
+        
+    if (ctx->request_callback != NULL) {
+        ctx->request_callback(ctx, (uint8_t*)req, req_length);
+    }
+
+    offset = ctx->backend->header_length;
 
         for (i = 0; i < rc; i++) {
             /* shift reg hi_byte to temp OR with lo_byte */
@@ -1562,7 +1587,12 @@ int modbus_write_and_read_registers(modbus_t *ctx,
         if (rc == -1)
             return -1;
 
-        offset = ctx->backend->header_length;
+        
+    if (ctx->request_callback != NULL) {
+        ctx->request_callback(ctx, (uint8_t*)req, req_length);
+    }
+
+    offset = ctx->backend->header_length;
         for (i = 0; i < rc; i++) {
             /* shift reg hi_byte to temp OR with lo_byte */
             dest[i] = (rsp[offset + 2 + (i << 1)] << 8) |
