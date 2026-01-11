@@ -24,85 +24,98 @@
 // Define the static member
 void (*ModbusServer::_onRequestCallback)(int, int, int, int) = NULL;
 
-extern "C" {
-// Helper callback for libmodbus
-int internalRequestCallback(modbus_t *ctx, uint8_t *req, int req_length) {
-    if (ModbusServer::_onRequestCallback) {
-        int header_length = modbus_get_header_length(ctx);
-        if (req_length < header_length + 1) return 0;
+extern "C"
+{
+  // Helper callback for libmodbus
+  int internalRequestCallback(modbus_t *ctx, uint8_t *req, int req_length)
+  {
+    if (ModbusServer::_onRequestCallback)
+    {
+      int header_length = modbus_get_header_length(ctx);
+      if (req_length < header_length + 1)
+        return 0;
 
-        int slave = req[header_length - 1];
-        int function = req[header_length];
-        int address = 0;
-        int quantity = 0;
+      int slave = req[header_length - 1];
+      int function = req[header_length];
+      int address = 0;
+      int quantity = 0;
 
-        // Extract address (usually 2 bytes after function)
-        if (req_length >= header_length + 3) {
-            address = (req[header_length + 1] << 8) + req[header_length + 2];
+      // Extract address (usually 2 bytes after function)
+      if (req_length >= header_length + 3)
+      {
+        address = (req[header_length + 1] << 8) + req[header_length + 2];
+      }
+
+      // Extract quantity based on function type
+      switch (function)
+      {
+      case MODBUS_FC_READ_COILS:
+      case MODBUS_FC_READ_DISCRETE_INPUTS:
+      case MODBUS_FC_READ_HOLDING_REGISTERS:
+      case MODBUS_FC_READ_INPUT_REGISTERS:
+      case MODBUS_FC_WRITE_MULTIPLE_COILS:
+      case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+        if (req_length >= header_length + 5)
+        {
+          quantity = (req[header_length + 3] << 8) + req[header_length + 4];
         }
+        break;
+      case MODBUS_FC_WRITE_SINGLE_COIL:
+      case MODBUS_FC_WRITE_SINGLE_REGISTER:
+        quantity = 1;
+        break;
+      default:
+        quantity = 0;
+      }
 
-        // Extract quantity based on function type
-        switch(function) {
-            case MODBUS_FC_READ_COILS:
-            case MODBUS_FC_READ_DISCRETE_INPUTS:
-            case MODBUS_FC_READ_HOLDING_REGISTERS:
-            case MODBUS_FC_READ_INPUT_REGISTERS:
-            case MODBUS_FC_WRITE_MULTIPLE_COILS:
-            case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
-                if (req_length >= header_length + 5) {
-                    quantity = (req[header_length + 3] << 8) + req[header_length + 4];
-                }
-                break;
-            case MODBUS_FC_WRITE_SINGLE_COIL:
-            case MODBUS_FC_WRITE_SINGLE_REGISTER:
-                quantity = 1; 
-                break;
-            default:
-                quantity = 0;
-        }
-
-        ModbusServer::_onRequestCallback(slave, function, address, quantity);
+      ModbusServer::_onRequestCallback(slave, function, address, quantity);
     }
     return 0;
-}
+  }
 }
 
-ModbusServer::ModbusServer() :
-  _mb(NULL)
+ModbusServer::ModbusServer() : _mb(NULL)
 {
   memset(&_mbMapping, 0x00, sizeof(_mbMapping));
 }
 
 ModbusServer::~ModbusServer()
 {
-  if (_mbMapping.tab_bits != NULL) {
+  if (_mbMapping.tab_bits != NULL)
+  {
     free(_mbMapping.tab_bits);
   }
 
-  if (_mbMapping.tab_input_bits != NULL) {
+  if (_mbMapping.tab_input_bits != NULL)
+  {
     free(_mbMapping.tab_input_bits);
   }
 
-  if (_mbMapping.tab_input_registers != NULL) {
+  if (_mbMapping.tab_input_registers != NULL)
+  {
     free(_mbMapping.tab_input_registers);
   }
 
-  if (_mbMapping.tab_registers != NULL) {
+  if (_mbMapping.tab_registers != NULL)
+  {
     free(_mbMapping.tab_registers);
   }
 
-  if (_mb != NULL) {
+  if (_mb != NULL)
+  {
     modbus_free(_mb);
   }
 }
 
-void ModbusServer::onRequest(void (*callback)(int, int, int, int)) {
-    _onRequestCallback = callback;
+void ModbusServer::onRequest(void (*callback)(int, int, int, int))
+{
+  _onRequestCallback = callback;
 }
 
 int ModbusServer::configureCoils(int startAddress, int nb)
 {
-  if (startAddress < 0 || nb < 1) {
+  if (startAddress < 0 || nb < 1)
+  {
     errno = EINVAL;
 
     return -1;
@@ -110,9 +123,10 @@ int ModbusServer::configureCoils(int startAddress, int nb)
 
   size_t s = sizeof(_mbMapping.tab_bits[0]) * nb;
 
-  _mbMapping.tab_bits = (uint8_t*)realloc(_mbMapping.tab_bits, s);
+  _mbMapping.tab_bits = (uint8_t *)realloc(_mbMapping.tab_bits, s);
 
-  if (_mbMapping.tab_bits == NULL) {
+  if (_mbMapping.tab_bits == NULL)
+  {
     _mbMapping.start_bits = 0;
     _mbMapping.nb_bits = 0;
 
@@ -128,7 +142,8 @@ int ModbusServer::configureCoils(int startAddress, int nb)
 
 int ModbusServer::configureDiscreteInputs(int startAddress, int nb)
 {
-  if (startAddress < 0 || nb < 1) {
+  if (startAddress < 0 || nb < 1)
+  {
     errno = EINVAL;
 
     return -1;
@@ -136,9 +151,10 @@ int ModbusServer::configureDiscreteInputs(int startAddress, int nb)
 
   size_t s = sizeof(_mbMapping.tab_input_bits[0]) * nb;
 
-  _mbMapping.tab_input_bits = (uint8_t*)realloc(_mbMapping.tab_input_bits, s);
+  _mbMapping.tab_input_bits = (uint8_t *)realloc(_mbMapping.tab_input_bits, s);
 
-  if (_mbMapping.tab_input_bits == NULL) {
+  if (_mbMapping.tab_input_bits == NULL)
+  {
     _mbMapping.start_input_bits = 0;
     _mbMapping.nb_input_bits = 0;
 
@@ -154,7 +170,8 @@ int ModbusServer::configureDiscreteInputs(int startAddress, int nb)
 
 int ModbusServer::configureHoldingRegisters(int startAddress, int nb)
 {
-  if (startAddress < 0 || nb < 1) {
+  if (startAddress < 0 || nb < 1)
+  {
     errno = EINVAL;
 
     return -1;
@@ -162,9 +179,10 @@ int ModbusServer::configureHoldingRegisters(int startAddress, int nb)
 
   size_t s = sizeof(_mbMapping.tab_registers[0]) * nb;
 
-  _mbMapping.tab_registers = (uint16_t*)realloc(_mbMapping.tab_registers, s);
+  _mbMapping.tab_registers = (uint16_t *)realloc(_mbMapping.tab_registers, s);
 
-  if (_mbMapping.tab_registers == NULL) {
+  if (_mbMapping.tab_registers == NULL)
+  {
     _mbMapping.start_registers = 0;
     _mbMapping.nb_registers = 0;
 
@@ -180,7 +198,8 @@ int ModbusServer::configureHoldingRegisters(int startAddress, int nb)
 
 int ModbusServer::configureInputRegisters(int startAddress, int nb)
 {
-  if (startAddress < 0 || nb < 1) {
+  if (startAddress < 0 || nb < 1)
+  {
     errno = EINVAL;
 
     return -1;
@@ -188,9 +207,10 @@ int ModbusServer::configureInputRegisters(int startAddress, int nb)
 
   size_t s = sizeof(_mbMapping.tab_input_registers[0]) * nb;
 
-  _mbMapping.tab_input_registers = (uint16_t*)realloc(_mbMapping.tab_input_registers, s);
+  _mbMapping.tab_input_registers = (uint16_t *)realloc(_mbMapping.tab_input_registers, s);
 
-  if (_mbMapping.tab_input_registers == NULL) {
+  if (_mbMapping.tab_input_registers == NULL)
+  {
     _mbMapping.start_input_registers = 0;
     _mbMapping.nb_input_registers = 0;
 
@@ -206,8 +226,9 @@ int ModbusServer::configureInputRegisters(int startAddress, int nb)
 
 int ModbusServer::coilRead(int address)
 {
-  if (_mbMapping.start_bits > address || 
-      (_mbMapping.start_bits + _mbMapping.nb_bits) < (address + 1)) {
+  if (_mbMapping.start_bits > address ||
+      (_mbMapping.start_bits + _mbMapping.nb_bits) < (address + 1))
+  {
     errno = EMBXILADD;
 
     return -1;
@@ -218,8 +239,9 @@ int ModbusServer::coilRead(int address)
 
 int ModbusServer::discreteInputRead(int address)
 {
-  if (_mbMapping.start_input_bits > address || 
-      (_mbMapping.start_input_bits + _mbMapping.nb_input_bits) < (address + 1)) {
+  if (_mbMapping.start_input_bits > address ||
+      (_mbMapping.start_input_bits + _mbMapping.nb_input_bits) < (address + 1))
+  {
     errno = EMBXILADD;
 
     return -1;
@@ -231,7 +253,8 @@ int ModbusServer::discreteInputRead(int address)
 long ModbusServer::holdingRegisterRead(int address)
 {
   if (_mbMapping.start_registers > address ||
-      (_mbMapping.start_registers + _mbMapping.nb_registers) < (address + 1)) {
+      (_mbMapping.start_registers + _mbMapping.nb_registers) < (address + 1))
+  {
     errno = EMBXILADD;
 
     return -1;
@@ -242,20 +265,22 @@ long ModbusServer::holdingRegisterRead(int address)
 
 long ModbusServer::inputRegisterRead(int address)
 {
-  if (_mbMapping.start_input_registers > address || 
-      (_mbMapping.start_input_registers + _mbMapping.nb_input_registers) < (address + 1)) {
+  if (_mbMapping.start_input_registers > address ||
+      (_mbMapping.start_input_registers + _mbMapping.nb_input_registers) < (address + 1))
+  {
     errno = EMBXILADD;
 
     return -1;
   }
 
- return _mbMapping.tab_input_registers[address - _mbMapping.start_input_registers];
+  return _mbMapping.tab_input_registers[address - _mbMapping.start_input_registers];
 }
 
 int ModbusServer::coilWrite(int address, uint8_t value)
 {
   if (_mbMapping.start_bits > address ||
-      (_mbMapping.start_bits + _mbMapping.nb_bits) < (address + 1)) {
+      (_mbMapping.start_bits + _mbMapping.nb_bits) < (address + 1))
+  {
     errno = EMBXILADD;
 
     return 0;
@@ -268,8 +293,9 @@ int ModbusServer::coilWrite(int address, uint8_t value)
 
 int ModbusServer::holdingRegisterWrite(int address, uint16_t value)
 {
-  if (_mbMapping.start_registers > address || 
-      (_mbMapping.start_registers + _mbMapping.nb_registers) < (address + 1)) {
+  if (_mbMapping.start_registers > address ||
+      (_mbMapping.start_registers + _mbMapping.nb_registers) < (address + 1))
+  {
     errno = EMBXILADD;
 
     return 0;
@@ -284,14 +310,16 @@ int ModbusServer::registerMaskWrite(int address, uint16_t andMask, uint16_t orMa
 {
   long value = holdingRegisterRead(address);
 
-  if (value < 0) {
+  if (value < 0)
+  {
     return 0;
   }
 
   value &= andMask;
   value |= orMask;
 
-  if (!holdingRegisterWrite(address, value)) {
+  if (!holdingRegisterWrite(address, value))
+  {
     return 0;
   }
 
@@ -305,8 +333,9 @@ int ModbusServer::discreteInputWrite(int address, uint8_t value)
 
 int ModbusServer::writeDiscreteInputs(int address, uint8_t values[], int nb)
 {
-  if (_mbMapping.start_input_bits > address || 
-      (_mbMapping.start_input_bits + _mbMapping.nb_input_bits) < (address + nb)) {
+  if (_mbMapping.start_input_bits > address ||
+      (_mbMapping.start_input_bits + _mbMapping.nb_input_bits) < (address + nb))
+  {
     errno = EMBXILADD;
 
     return 0;
@@ -324,8 +353,9 @@ int ModbusServer::inputRegisterWrite(int address, uint16_t value)
 
 int ModbusServer::writeInputRegisters(int address, uint16_t values[], int nb)
 {
-  if (_mbMapping.start_input_registers > address || 
-      (_mbMapping.start_input_registers + _mbMapping.nb_input_registers) < (address + nb)) {
+  if (_mbMapping.start_input_registers > address ||
+      (_mbMapping.start_input_registers + _mbMapping.nb_input_registers) < (address + nb))
+  {
     errno = EMBXILADD;
 
     return 0;
@@ -336,42 +366,48 @@ int ModbusServer::writeInputRegisters(int address, uint16_t values[], int nb)
   return 1;
 }
 
-int ModbusServer::begin(modbus_t* mb, int id)
+int ModbusServer::begin(modbus_t *mb, int id)
 {
   end();
 
   _mb = mb;
-  if (_mb == NULL) {
+  if (_mb == NULL)
+  {
     return 0;
   }
 
   modbus_set_slave(_mb, id);
-  modbus_set_request_callback(_modbus, internalRequestCallback);
+  modbus_set_request_callback(_mb, internalRequestCallback);
 
   return 1;
 }
 
 void ModbusServer::end()
 {
-  if (_mbMapping.tab_bits != NULL) {
+  if (_mbMapping.tab_bits != NULL)
+  {
     free(_mbMapping.tab_bits);
   }
 
-  if (_mbMapping.tab_input_bits != NULL) {
+  if (_mbMapping.tab_input_bits != NULL)
+  {
     free(_mbMapping.tab_input_bits);
   }
 
-  if (_mbMapping.tab_input_registers != NULL) {
+  if (_mbMapping.tab_input_registers != NULL)
+  {
     free(_mbMapping.tab_input_registers);
   }
 
-  if (_mbMapping.tab_registers != NULL) {
+  if (_mbMapping.tab_registers != NULL)
+  {
     free(_mbMapping.tab_registers);
   }
 
   memset(&_mbMapping, 0x00, sizeof(_mbMapping));
 
-  if (_mb != NULL) {
+  if (_mb != NULL)
+  {
     modbus_close(_mb);
     modbus_free(_mb);
 
