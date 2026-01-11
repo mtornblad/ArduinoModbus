@@ -126,8 +126,7 @@ public:
 
   /**
    * Poll for requests
-   * 
-   * @return 1 on request, 0 on no request.
+   * * @return 1 on request, 0 on no request.
    */
   virtual int poll() = 0;
 
@@ -136,7 +135,7 @@ public:
    */
   void end();
 
-
+  // --- New Callback Functionality ---
   void onRequest(void (*callback)(int slave, int function, int address, int quantity));
   static void (*_onRequestCallback)(int slave, int function, int address, int quantity);
 
@@ -145,10 +144,6 @@ protected:
   virtual ~ModbusServer();
 
   int begin(modbus_t* _mb, int id);
-
-
-  void onRequest(void (*callback)(int slave, int function, int address, int quantity));
-  static void (*_onRequestCallback)(int slave, int function, int address, int quantity);
 
 protected:
   modbus_t* _mb;

@@ -67,7 +67,6 @@ int internalRequestCallback(modbus_t *ctx, uint8_t *req, int req_length) {
 }
 }
 
-
 ModbusServer::ModbusServer() :
   _mb(NULL)
 {
@@ -79,11 +78,6 @@ ModbusServer::~ModbusServer()
   if (_mbMapping.tab_bits != NULL) {
     free(_mbMapping.tab_bits);
   }
-
-void ModbusServer::onRequest(void (*callback)(int, int, int, int)) {
-    _onRequestCallback = callback;
-}
-
 
   if (_mbMapping.tab_input_bits != NULL) {
     free(_mbMapping.tab_input_bits);
@@ -100,6 +94,10 @@ void ModbusServer::onRequest(void (*callback)(int, int, int, int)) {
   if (_mb != NULL) {
     modbus_free(_mb);
   }
+}
+
+void ModbusServer::onRequest(void (*callback)(int, int, int, int)) {
+    _onRequestCallback = callback;
 }
 
 int ModbusServer::configureCoils(int startAddress, int nb)
@@ -348,9 +346,9 @@ int ModbusServer::begin(modbus_t* mb, int id)
   }
 
   modbus_set_slave(_mb, id);
+  modbus_set_request_callback(_modbus, internalRequestCallback);
 
-  
-    modbus_set_request_callback(_modbus, internalRequestCallback);return 1;
+  return 1;
 }
 
 void ModbusServer::end()

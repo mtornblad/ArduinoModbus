@@ -59,9 +59,9 @@ typedef enum {
 } modbus_backend_type_t;
 
 /*
- *  ---------- Request     Indication ----------
- *  | Client | ---------------------->| Server |
- *  ---------- Confirmation  Response ----------
+ * ---------- Request     Indication ----------
+ * | Client | ---------------------->| Server |
+ * ---------- Confirmation  Response ----------
  */
 typedef enum {
     /* Request message on the server side */
@@ -112,14 +112,12 @@ struct _modbus {
     int error_recovery;
     struct timeval response_timeout;
     struct timeval byte_timeout;
-        const modbus_backend_t *backend;
+    const modbus_backend_t *backend;
     void *backend_data;
-    void *parameter; // custom user data
+    void *parameter; // custom user data (RESTORED)
     
-    // Callback function pointer
+    // Callback function pointer (Added for Thermia)
     int (*request_callback)(modbus_t *ctx, uint8_t *req, int req_length);
-
-    void *backend_data;
 };
 
 void _modbus_init_common(modbus_t *ctx);

@@ -96,7 +96,7 @@ MODBUS_BEGIN_DECLS
 
 /* Consequently:
  * - RTU MODBUS ADU = 253 bytes + Server address (1 byte) + CRC (2 bytes) = 256
- *   bytes.
+ * bytes.
  * - TCP MODBUS ADU = 253 bytes + MBAP (7 bytes) = 260 bytes.
  * so the maximum of both backend in 260 bytes. This size can used to allocate
  * an array of bytes to store responses and it will be compatible with the two
@@ -180,9 +180,7 @@ MODBUS_API int modbus_set_socket(modbus_t *ctx, int s);
 MODBUS_API int modbus_get_socket(modbus_t *ctx);
 
 MODBUS_API int modbus_get_response_timeout(modbus_t *ctx, uint32_t *to_sec, uint32_t *to_usec);
-MODBUS_API 
-int modbus_set_response_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec);
-void modbus_set_request_callback(modbus_t *ctx, int (*callback)(modbus_t *ctx, uint8_t *req, int req_length));
+MODBUS_API int modbus_set_response_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec);
 
 MODBUS_API int modbus_get_byte_timeout(modbus_t *ctx, uint32_t *to_sec, uint32_t *to_usec);
 MODBUS_API int modbus_set_byte_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec);
@@ -233,6 +231,9 @@ MODBUS_API int modbus_reply(modbus_t *ctx, const uint8_t *req,
                             int req_length, modbus_mapping_t *mb_mapping);
 MODBUS_API int modbus_reply_exception(modbus_t *ctx, const uint8_t *req,
                                       unsigned int exception_code);
+
+// New function to set the callback
+MODBUS_API void modbus_set_request_callback(modbus_t *ctx, int (*callback)(modbus_t *ctx, uint8_t *req, int req_length));
 
 /**
  * UTILS FUNCTIONS
