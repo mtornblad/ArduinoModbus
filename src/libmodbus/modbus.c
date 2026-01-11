@@ -1626,6 +1626,7 @@ void _modbus_init_common(modbus_t *ctx)
 
     ctx->debug = FALSE;
     ctx->error_recovery = MODBUS_ERROR_RECOVERY_NONE;
+    ctx->request_callback = NULL;
 
     ctx->response_timeout.tv_sec = 0;
     ctx->response_timeout.tv_usec = _RESPONSE_TIMEOUT;
@@ -1739,6 +1740,10 @@ int modbus_get_header_length(modbus_t *ctx)
     }
 
     return ctx->backend->header_length;
+}
+
+void modbus_set_request_callback(modbus_t *ctx, int (*callback)(modbus_t *ctx, uint8_t *req, int req_length)) {
+    ctx->request_callback = callback;
 }
 
 int modbus_connect(modbus_t *ctx)

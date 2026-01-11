@@ -112,7 +112,13 @@ struct _modbus {
     int error_recovery;
     struct timeval response_timeout;
     struct timeval byte_timeout;
-    const modbus_backend_t *backend;
+        const modbus_backend_t *backend;
+    void *backend_data;
+    void *parameter; // custom user data
+    
+    // Callback function pointer
+    int (*request_callback)(modbus_t *ctx, uint8_t *req, int req_length);
+
     void *backend_data;
 };
 
