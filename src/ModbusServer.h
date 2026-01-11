@@ -136,11 +136,19 @@ public:
    */
   void end();
 
+
+  void onRequest(void (*callback)(int slave, int function, int address, int quantity));
+  static void (*_onRequestCallback)(int slave, int function, int address, int quantity);
+
 protected:
   ModbusServer();
   virtual ~ModbusServer();
 
   int begin(modbus_t* _mb, int id);
+
+
+  void onRequest(void (*callback)(int slave, int function, int address, int quantity));
+  static void (*_onRequestCallback)(int slave, int function, int address, int quantity);
 
 protected:
   modbus_t* _mb;

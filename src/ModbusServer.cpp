@@ -349,7 +349,8 @@ int ModbusServer::begin(modbus_t* mb, int id)
 
   modbus_set_slave(_mb, id);
 
-  return 1;
+  
+    modbus_set_request_callback(_modbus, internalRequestCallback);return 1;
 }
 
 void ModbusServer::end()
